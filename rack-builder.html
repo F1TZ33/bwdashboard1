@@ -7,6 +7,7 @@
 
 <link href="assets/css/style.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
 <style>
   body{
@@ -914,11 +915,6 @@
     qrLabels.innerHTML = '';
     qrSection.classList.add('active');
 
-    if(!window.QRCode || typeof window.QRCode.toCanvas !== 'function'){
-      qrLabels.innerHTML = '<div class="qrError">QR library could not load. Check the device has internet access, then refresh the page.</div>';
-      return;
-    }
-
     for(const row of rackRows){
       row.qr = makeQrPayload(row);
 
@@ -927,9 +923,6 @@
 
       const canvasWrap = document.createElement('div');
       canvasWrap.className = 'qrCanvasWrap';
-
-      const canvas = document.createElement('canvas');
-      canvasWrap.appendChild(canvas);
 
       const text = document.createElement('div');
       text.className = 'qrLabelText';
@@ -943,11 +936,44 @@
       label.appendChild(text);
       qrLabels.appendChild(label);
 
-      await window.QRCode.toCanvas(canvas, row.qr, {
-        width:78,
-        margin:1,
-        errorCorrectionLevel:'M'
-      });
+      try{
+        if(window.QRCode && typeof window.QRCode.toCanvas === 'function'){
+          const canvas = document.createElement('canvas');
+          canvasWrap.appendChild(canvas);
+
+          await window.QRCode.toCanvas(canvas, row.qr, {
+            width:78,
+            margin:1,
+            errorCorrectionLevel:'M'
+          });
+        } else if(window.QRious){
+          const canvas = document.createElement('canvas');
+          canvasWrap.appendChild(canvas);
+
+          new QRious({
+            element:canvas,
+            value:row.qr,
+            size:78,
+            padding:4,
+            level:'M'
+          });
+        } else {
+          const img = document.createElement('img');
+          img.width = 78;
+          img.height = 78;
+          img.alt = 'QR code';
+          img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=78x78&margin=1&data=' + encodeURIComponent(row.qr);
+          canvasWrap.appendChild(img);
+        }
+      } catch(error){
+        const img = document.createElement('img');
+        img.width = 78;
+        img.height = 78;
+        img.alt = 'QR code';
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=78x78&margin=1&data=' + encodeURIComponent(row.qr);
+        canvasWrap.innerHTML = '';
+        canvasWrap.appendChild(img);
+      }
     }
 
     statusNote.textContent = `${rackRows.length} QR labels generated.`;
