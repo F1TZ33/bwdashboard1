@@ -86,7 +86,7 @@
   }
 
   .binTile{
-    min-height:44px;
+    min-height:54px;
     border:1px solid rgba(198,40,40,.28);
     border-radius:12px;
     display:flex;
@@ -96,9 +96,15 @@
     padding:8px;
     background:linear-gradient(180deg, rgba(198,40,40,.12), rgba(198,40,40,.06));
     color:var(--text);
-    font-weight:800;
-    font-size:12px;
+    font-weight:900;
+    font-size:20px;
     word-break:break-word;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .binTile:hover{
+    background:linear-gradient(180deg, rgba(198,40,40,.18), rgba(198,40,40,.08));
   }
 
   .rackTableWrap{
@@ -281,6 +287,8 @@
   const uploadInput = document.getElementById('csvUpload');
 
   let rackRows = [];
+  let rackBins = [];
+  let defaultPositions = 0;
 
   const headers = [
     'Full Bin Location',
@@ -369,75 +377,104 @@
     });
   }
 
-  function buildRows(){
+  function buildCode(rack, shelfIndex, binIndex, positionIndex){
+    return `${pad2(rack || '')}${shelfLetter(shelfIndex)}${pad2(binIndex)}${posLetter(positionIndex)}`;
+  }
+
+  function baseBinCode(binCode){
+    return String(binCode || '').replace(/[a-z]$/, '');
+  }
+
+  function buildRowsFromBins(){
     const site = val('site');
     const category = val('category');
     const rack = val('rack');
-    const shelves = safeNumber('shelves');
-    const bins = safeNumber('bins');
-    const positions = safeNumber('positions');
 
     const part = val('partPlaceholder') || 'Part';
     const desc = val('descPlaceholder') || 'Desc';
     const min = val('minPlaceholder') || '0';
     const max = val('maxPlaceholder') || '1';
 
+    const rows = [];
+
+    rackBins.forEach(bin => {
+      for(let p = 1; p <= bin.positions; p++){
+        const code = buildCode(rack, bin.shelf, bin.bin, p);
+        const full = [site, category, code].filter(Boolean).join(':');
+
+        const row = {
+          full,
+          bin: code,
+          part,
+          desc,
+          min,
+          max,
+          notes: ''
+        };
+
+        row.qr = makeQrPayload(row);
+        rows.push(row);
+      }
+    });
+
+    return rows;
+  }
+
+  function buildRows(){
+    const shelves = safeNumber('shelves');
+    const bins = safeNumber('bins');
+    const positions = safeNumber('positions');
+
     if(!shelves || !bins || !positions){
       alert('Enter shelves, bins per shelf, and positions per bin before building the rack.');
       return [];
     }
 
-    const rows = [];
+    defaultPositions = positions;
+    rackBins = [];
 
     for(let s = 1; s <= shelves; s++){
       for(let b = 1; b <= bins; b++){
-        for(let p = 1; p <= positions; p++){
-          const code = `${pad2(rack || '')}${shelfLetter(s)}${pad2(b)}${posLetter(p)}`;
-          const full = [site, category, code].filter(Boolean).join(':');
-
-          const row = {
-            full,
-            bin: code,
-            part,
-            desc,
-            min,
-            max,
-            notes: ''
-          };
-
-          row.qr = makeQrPayload(row);
-          rows.push(row);
-        }
+        rackBins.push({
+          shelf:s,
+          bin:b,
+          positions:positions
+        });
       }
     }
 
-    return rows;
+    return buildRowsFromBins();
+  }
+
+  function syncRowsFromBins(){
+    rackRows = buildRowsFromBins();
+    render();
+    statusNote.textContent = `${rackRows.length} bin locations built.`;
   }
 
   function render(){
-    if(!rackRows.length){
+    if(!rackRows.length && !rackBins.length){
       output.innerHTML = '';
       return;
     }
 
-    const bins = safeNumber('bins') || Math.max(1, Math.min(6, rackRows.length));
+    const binsPerShelf = safeNumber('bins') || Math.max(1, ...rackBins.map(bin => bin.bin), 1);
 
     const shelves = {};
-    rackRows.forEach(row => {
-      const match = row.bin.match(/[A-Z]/);
-      const shelf = match ? match[0] : 'Imported';
+    rackBins.forEach(bin => {
+      const shelf = shelfLetter(bin.shelf);
       if(!shelves[shelf]) shelves[shelf] = [];
-      shelves[shelf].push(row);
+      shelves[shelf].push(bin);
     });
 
     let visual = '<div class="rackVisual">';
     Object.keys(shelves).forEach(shelf => {
       visual += `<div class="shelf">
         <div class="shelfTitle">Shelf ${shelf}</div>
-        <div class="binRow" style="grid-template-columns:repeat(${Math.min(bins, 8)}, minmax(0,1fr));">`;
+        <div class="binRow" style="grid-template-columns:repeat(${Math.min(binsPerShelf, 8)}, minmax(0,1fr));">`;
 
-      shelves[shelf].forEach(row => {
-        visual += `<div class="binTile" title="${row.full}">${row.bin}<br>${row.part}</div>`;
+      shelves[shelf].forEach(bin => {
+        visual += `<div class="binTile" data-shelf="${bin.shelf}" data-bin="${bin.bin}" title="Tap to reduce positions">${bin.positions}</div>`;
       });
 
       visual += '</div></div>';
@@ -474,6 +511,19 @@
 
     table += '</tbody></table></div>';
     output.innerHTML = visual + table;
+
+    output.querySelectorAll('.binTile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const shelf = Number(tile.dataset.shelf);
+        const binNo = Number(tile.dataset.bin);
+        const bin = rackBins.find(item => item.shelf === shelf && item.bin === binNo);
+
+        if(!bin) return;
+
+        bin.positions = bin.positions > 0 ? bin.positions - 1 : defaultPositions;
+        syncRowsFromBins();
+      });
+    });
 
     output.querySelectorAll('input').forEach(input => {
       input.addEventListener('focus', () => {
@@ -594,6 +644,25 @@
         return item;
       });
 
+      const grouped = new Map();
+      rackRows.forEach(row => {
+        const base = baseBinCode(row.bin);
+        const shelfMatch = base.match(/[A-Z]/);
+        const shelf = shelfMatch ? shelfMatch[0].charCodeAt(0) - 64 : 1;
+        const binMatch = base.match(/[A-Z](\d+)/);
+        const binNo = binMatch ? parseInt(binMatch[1], 10) : grouped.size + 1;
+        const key = `${shelf}:${binNo}`;
+
+        if(!grouped.has(key)){
+          grouped.set(key, { shelf, bin:binNo, positions:0 });
+        }
+
+        grouped.get(key).positions += 1;
+      });
+
+      rackBins = Array.from(grouped.values()).sort((a,b) => a.shelf - b.shelf || a.bin - b.bin);
+      defaultPositions = Math.max(1, ...rackBins.map(bin => bin.positions));
+
       render();
       statusNote.textContent = `${rackRows.length} bin locations uploaded.`;
       uploadInput.value = '';
@@ -610,6 +679,8 @@
     output.innerHTML = '';
     statusNote.textContent = '';
     rackRows = [];
+    rackBins = [];
+    defaultPositions = 0;
   }
 
   document.getElementById('generateBtn').addEventListener('click', buildRack);
