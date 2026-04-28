@@ -43,6 +43,9 @@
 
     .uploadBtn{
       cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
     }
 
     .uploadBtn input{
@@ -569,6 +572,11 @@
       }
 
       function parseCsv(text){
+        text = String(text || '')
+          .replace(/^\\uFEFF/, '')
+          .replace(/\\r\\n/g, '\\n')
+          .replace(/\\r/g, '\\n');
+
         const rows = [];
         let row = [];
         let value = '';
@@ -586,14 +594,11 @@
           }else if(char === ',' && !inQuotes){
             row.push(value);
             value = '';
-          }else if((char === '\\n' || char === '\\r') && !inQuotes){
-            if(char === '\\r' && next === '\\n') i++;
+          }else if(char === '\\n' && !inQuotes){
             row.push(value);
-
             if(row.some(cell => String(cell).trim() !== '')){
               rows.push(row);
             }
-
             row = [];
             value = '';
           }else{
@@ -603,7 +608,6 @@
 
         if(value || row.length){
           row.push(value);
-
           if(row.some(cell => String(cell).trim() !== '')){
             rows.push(row);
           }
@@ -637,6 +641,11 @@
       }
 
       function uploadCsv(file){
+        if(!file){
+          alert('No CSV file selected.');
+          return;
+        }
+
         const reader = new FileReader();
 
         reader.onload = () => {
@@ -647,14 +656,22 @@
           }
         };
 
+        reader.onerror = () => {
+          alert('Could not read the selected CSV file.');
+        };
+
         reader.readAsText(file);
       }
 
       function loadCsvIntoRack(text){
         const rows = parseCsv(text);
 
+        if(rows.length === 0){
+          throw new Error('CSV is empty.');
+        }
+
         if(rows.length < 2){
-          throw new Error('CSV does not contain enough rows.');
+          throw new Error('CSV has a header but no data rows.');
         }
 
         const header = rows[0].map(h => String(h).trim().toLowerCase());
@@ -727,7 +744,7 @@
         const groups = Object.values(grouped);
 
         if(!groups.length){
-          throw new Error('No valid bin codes found.');
+          throw new Error('No valid bin codes found. Check that Bin Code values look like 01A01A.');
         }
 
         if(importedCustomer) customerNameEl.value = importedCustomer;
@@ -763,7 +780,7 @@
         drawMap();
         drawList();
 
-        setStatus(`Uploaded ${rows.length - 1} CSV row${rows.length - 2 === 0 ? '' : 's'} and rebuilt the rack.`);
+        setStatus(`Uploaded ${rows.length - 1} CSV data row${rows.length - 2 === 0 ? '' : 's'} and rebuilt the rack.`);
       }
 
       buildBtn.addEventListener('click', buildAll);
