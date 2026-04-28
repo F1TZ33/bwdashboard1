@@ -1,134 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BW Rack Map Builder</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Rack Map Builder</title>
+  <link href="assets/css/style.css" rel="stylesheet"/>
+
   <style>
-    :root{
-      --navy:#071326;
-      --navy2:#0b1d36;
-      --panel:#101b31;
-      --panel2:#17243d;
-      --text:#f4f7fb;
-      --muted:#aeb8ca;
-      --red:#c62828;
-      --line:rgba(255,255,255,.12);
-      --glow:rgba(198,40,40,.28);
-    }
-    *{box-sizing:border-box}
     body{
-      margin:0;
-      font-family:Arial, Helvetica, sans-serif;
-      background:radial-gradient(circle at top, #142444 0, var(--navy) 48%, #050b16 100%);
-      color:var(--text);
-      padding-bottom:32px;
+      padding-top:max(0px, env(safe-area-inset-top));
+      padding-bottom:max(28px, calc(env(safe-area-inset-bottom) + 18px));
     }
-    .container{width:min(1120px, calc(100% - 28px)); margin:0 auto;}
-    .siteHeader{padding:18px 0 8px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
-    .brand{font-weight:900; letter-spacing:.08em; color:#fff; font-size:20px;}
-    .topbar{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:10px 0 18px;}
-    .btn,.smallbtn{
-      border:1px solid rgba(198,40,40,.55);
-      background:linear-gradient(180deg, rgba(198,40,40,.18), rgba(198,40,40,.07));
-      color:var(--text);
-      text-decoration:none;
-      border-radius:14px;
-      padding:12px 16px;
-      font-weight:800;
-      cursor:pointer;
-      box-shadow:0 0 0 1px rgba(255,255,255,.03) inset, 0 10px 24px rgba(0,0,0,.16);
+
+    .rackCard{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:20px;
+      padding:18px;
+      box-shadow:0 14px 32px rgba(0,0,0,.16);
+      margin-bottom:16px;
     }
-    .smallbtn{padding:10px 13px; border-radius:12px;}
-    .btn:hover,.smallbtn:hover{box-shadow:0 0 18px var(--glow);}
-    .heroPanel,.card{
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025));
-      border-radius:22px;
-      box-shadow:0 18px 38px rgba(0,0,0,.22);
+
+    .rackGridForm{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:16px;
     }
-    .heroPanel{padding:24px; margin-bottom:16px;}
-    .heroPanel h1{margin:0 0 8px; font-size:34px;}
-    .subtitle{margin:0; color:var(--muted); line-height:1.5;}
-    .card{padding:18px; margin:16px 0;}
-    .grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
-    .field{display:flex; flex-direction:column; gap:7px; min-width:0;}
-    label{font-size:12px; color:#dbe5f4; font-weight:800; letter-spacing:.03em;}
-    input,select,textarea{
-      width:100%; min-width:0; height:46px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
-      background:rgba(8,15,29,.72); color:var(--text); padding:0 13px; outline:none;
+
+    .field input,
+    .field select{
+      height:48px;
+      min-height:48px;
+      box-sizing:border-box;
+      padding:0 14px;
+      border-radius:12px;
     }
-    textarea{height:92px; padding:12px 13px; resize:vertical;}
-    input:focus,select:focus,textarea:focus{border-color:rgba(198,40,40,.72); box-shadow:0 0 0 3px rgba(198,40,40,.14);}
-    .actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;}
-    .previewWrap{overflow:auto; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.025); padding:12px;}
-    .rackGrid{display:grid; gap:8px; min-width:620px;}
-    .bin{
-      min-height:54px; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px;
+
+    .rackActions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      margin-top:10px;
+    }
+
+    .rackActions .btn,
+    .rackActions .smallbtn{
+      min-height:44px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .fileInput{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+
+    .rackNote{
+      color:rgba(255,255,255,.72);
+      font-size:13px;
+      line-height:1.45;
+      margin:12px 0 0;
+    }
+
+    .mapWrap,
+    .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
+      background:rgba(255,255,255,.025);
+      padding:12px;
+    }
+
+    .visualRack{
+      display:grid;
+      gap:8px;
+      min-width:620px;
+    }
+
+    .binTile{
+      min-height:56px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:8px;
       background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-      font-size:12px; color:#dce6f5;
+      color:rgba(255,255,255,.82);
+      font-size:12px;
     }
-    .bin strong{display:block; color:#fff; margin-bottom:3px;}
-    .tableWrap{overflow:auto; border-radius:16px; border:1px solid var(--line);}
-    table{width:100%; border-collapse:collapse; min-width:920px; background:rgba(255,255,255,.025);}
-    th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle;}
-    th{font-size:12px; color:#dbe5f4; background:rgba(255,255,255,.05); position:sticky; top:0;}
-    td input{height:38px; border-radius:10px;}
-    .placeholderValue{color:#9fb0c8; font-style:italic;}
-    .note{color:var(--muted); font-size:13px; line-height:1.45;}
-    @media(max-width:840px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));}.heroPanel h1{font-size:28px;}}
-    @media(max-width:560px){.container{width:100%; padding:0 14px;}.grid{grid-template-columns:1fr}.card{padding:14px}.heroPanel{padding:18px}.btn,.smallbtn{width:100%; text-align:center}.actions{gap:10px}.siteHeader{padding-left:2px;padding-right:2px}}
+
+    .binTile strong{
+      display:block;
+      color:#fff;
+      margin-bottom:4px;
+      font-size:13px;
+    }
+
+    table{
+      width:100%;
+      min-width:980px;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      text-align:left;
+      vertical-align:middle;
+      padding:9px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      font-size:13px;
+    }
+
+    th{
+      color:#fff;
+      background:rgba(255,255,255,.05);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    td input{
+      height:38px;
+      min-height:38px;
+      border-radius:10px;
+      padding:0 10px;
+      box-sizing:border-box;
+      width:100%;
+    }
+
+    .placeholderValue{
+      color:rgba(255,255,255,.45)!important;
+      font-style:italic;
+    }
+
+    .statusLine{
+      color:rgba(255,255,255,.72);
+      font-size:13px;
+      margin-top:10px;
+    }
+
+    @media (max-width:980px){
+      .rackGridForm{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width:760px){
+      .container{
+        width:100%;
+        max-width:100%;
+        padding-left:14px;
+        padding-right:14px;
+        box-sizing:border-box;
+        overflow-x:hidden;
+      }
+
+      .rackCard{ padding:14px; }
+      .rackGridForm{ grid-template-columns:minmax(0,1fr); }
+      .rackActions .btn,
+      .rackActions .smallbtn{ width:100%; }
+      .visualRack{ min-width:520px; }
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <header class="siteHeader">
-      <div class="brand">BW DASHBOARD</div>
-    </header>
+
+    <div class="siteHeader">
+      <img class="siteLogo" src="assets/img/logo.png" alt="BW"/>
+    </div>
 
     <div class="topbar">
-      <a class="btn" href="index.html">⤒ Dashboard</a>
-      <a class="btn" href="resources.html">← Back</a>
+      <div class="leftBtns">
+        <a class="btn" href="index.html">⤒ Dashboard</a>
+        <a class="btn" href="resources.html">← Back</a>
+      </div>
     </div>
 
     <section class="heroPanel">
+      <div class="heroIcon">🗂️</div>
       <h1>Rack Map Builder</h1>
-      <p class="subtitle">Generate rack bin locations, export a CSV template, and keep each field populated with safe placeholders for upload validation.</p>
+      <p class="subtitle">
+        Create rack bin maps, export CSV templates, upload existing CSV files, and keep required fields populated for validation.
+      </p>
     </section>
 
-    <section class="card">
-      <div class="grid">
-        <div class="field"><label>Customer / Site</label><input id="site" value="JETVAC"></div>
-        <div class="field"><label>Rack / Category</label><input id="category" value="BOLTS"></div>
-        <div class="field"><label>Rack Number</label><input id="rack" value="01" maxlength="2"></div>
-        <div class="field"><label>Shelf Letters</label><input id="shelves" value="A:E"></div>
-        <div class="field"><label>Bins per Shelf</label><input id="bins" type="number" min="1" max="99" value="5"></div>
-        <div class="field"><label>Positions per Bin</label><input id="positions" type="number" min="1" max="26" value="1"></div>
+    <section class="rackCard">
+      <div class="rackGridForm">
+        <div class="field"><label>Customer / Site</label><input id="siteName" value="JETVAC"></div>
+        <div class="field"><label>Rack / Category</label><input id="rackCategory" value="BOLTS"></div>
+        <div class="field"><label>Rack Number</label><input id="rackNumber" type="number" min="1" max="99" value="1"></div>
+        <div class="field"><label>Number of Shelves</label><input id="shelfCount" type="number" min="1" max="26" value="5"></div>
+        <div class="field"><label>Bins per Shelf</label><input id="binCount" type="number" min="1" max="99" value="5"></div>
+        <div class="field"><label>Positions per Bin</label><input id="positionCount" type="number" min="1" max="26" value="1"></div>
         <div class="field"><label>Part Placeholder</label><input id="partPlaceholder" value="Part"></div>
         <div class="field"><label>Description Placeholder</label><input id="descPlaceholder" value="Desc"></div>
         <div class="field"><label>Min Placeholder</label><input id="minPlaceholder" type="number" value="0"></div>
         <div class="field"><label>Max Placeholder</label><input id="maxPlaceholder" type="number" value="1"></div>
       </div>
-      <div class="actions">
-        <button class="btn" id="generateBtn">Generate Rack Map</button>
-        <button class="smallbtn" id="downloadBtn">Download CSV</button>
-        <button class="smallbtn" id="resetBtn">Reset</button>
+
+      <div class="rackActions">
+        <button id="generateBtn" class="btn" type="button">Generate Rack Map</button>
+        <button id="downloadBtn" class="smallbtn" type="button">Download CSV</button>
+        <label class="smallbtn" for="uploadCsv">Upload CSV</label>
+        <input id="uploadCsv" class="fileInput" type="file" accept=".csv,text/csv">
+        <button id="resetBtn" class="smallbtn" type="button">Reset</button>
       </div>
-      <p class="note">CSV output uses placeholders: Part, Desc, 0 and 1 by default. In the editable table below, placeholder values auto-clear when you focus a field so real data can be typed straight in.</p>
+
+      <p class="rackNote">
+        CSV output uses placeholders by default: <strong>Part</strong>, <strong>Desc</strong>, <strong>0</strong>, and <strong>1</strong>. Placeholder values auto-clear when you start editing a field, then restore if left blank.
+      </p>
+      <div id="statusLine" class="statusLine"></div>
     </section>
 
-    <section class="card">
-      <h2>Visual Map</h2>
-      <div class="previewWrap"><div id="rackGrid" class="rackGrid"></div></div>
+    <section class="rackCard">
+      <h3>Rack Map</h3>
+      <div class="mapWrap">
+        <div id="visualRack" class="visualRack"></div>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>CSV Preview / Editable Template</h2>
+    <section class="rackCard">
+      <h3>CSV Preview / Editable Template</h3>
       <div class="tableWrap">
         <table>
           <thead>
             <tr>
-              <th>Full Bin Location</th><th>Bin Code</th><th>Part Number</th><th>Description</th><th>Min Stock</th><th>Max Stock</th><th>Notes</th><th>QR Code</th>
+              <th>Full Bin Location</th>
+              <th>Bin Code</th>
+              <th>Part Number</th>
+              <th>Description</th>
+              <th>Min Stock</th>
+              <th>Max Stock</th>
+              <th>Notes</th>
+              <th>QR Code</th>
             </tr>
           </thead>
           <tbody id="rowsBody"></tbody>
@@ -141,30 +253,41 @@
 (() => {
   const $ = id => document.getElementById(id);
   const rowsBody = $('rowsBody');
-  const rackGrid = $('rackGrid');
+  const visualRack = $('visualRack');
+  const statusLine = $('statusLine');
   let rows = [];
 
-  function pad2(value){ return String(value).padStart(2,'0').slice(-2); }
+  const headers = [
+    'Full Bin Location',
+    'Bin Code',
+    'Part Number',
+    'Description',
+    'Min Stock',
+    'Max Stock',
+    'Notes',
+    'QR Code'
+  ];
 
-  function parseShelves(value){
-    const raw = String(value || '').trim().toUpperCase();
-    if(!raw) return ['A'];
-    if(raw.includes(':')){
-      const [start,end] = raw.split(':').map(x => x.trim().charCodeAt(0));
-      if(Number.isFinite(start) && Number.isFinite(end)){
-        const min = Math.min(start,end), max = Math.max(start,end);
-        return Array.from({length:max-min+1},(_,i)=>String.fromCharCode(min+i));
-      }
-    }
-    return raw.split(',').map(x => x.trim()[0]).filter(Boolean);
+  function pad2(value){
+    const n = parseInt(value, 10);
+    return String(Number.isFinite(n) && n > 0 ? n : 1).padStart(2, '0');
   }
 
-  function positionLetters(count){
-    const n = Math.max(1, Math.min(26, Number(count) || 1));
-    return Array.from({length:n},(_,i)=>String.fromCharCode(65+i));
+  function cleanCode(value, fallback){
+    return String(value || fallback).trim().toUpperCase().replace(/\s+/g, '-');
   }
 
-  function currentPlaceholders(){
+  function clampNumber(value, min, max, fallback){
+    const n = parseInt(value, 10);
+    if(!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function letter(index){
+    return String.fromCharCode(65 + index);
+  }
+
+  function placeholders(){
     return {
       part: $('partPlaceholder').value || 'Part',
       desc: $('descPlaceholder').value || 'Desc',
@@ -173,85 +296,190 @@
     };
   }
 
-  function buildRows(){
-    const site = ($('site').value || 'SITE').trim().toUpperCase().replace(/\s+/g,'-');
-    const category = ($('category').value || 'RACK').trim().toUpperCase().replace(/\s+/g,'-');
-    const rack = pad2($('rack').value || '01');
-    const shelves = parseShelves($('shelves').value);
-    const bins = Math.max(1, Math.min(99, Number($('bins').value) || 1));
-    const positions = positionLetters($('positions').value);
-    const ph = currentPlaceholders();
-
-    rows = [];
-    shelves.forEach(shelf => {
-      for(let b=1; b<=bins; b++){
-        positions.forEach(pos => {
-          const binCode = `${rack}${shelf}${pad2(b)}${pos}`;
-          const full = `${site}:${category}:${binCode}`;
-          rows.push({ full, binCode, part: ph.part, desc: ph.desc, min: ph.min, max: ph.max, notes: '', qr: full });
-        });
-      }
-    });
+  function escapeHtml(value){
+    return String(value ?? '').replace(/[&<>"]/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'
+    }[ch]));
   }
 
-  function placeholderClass(key, value){
-    const ph = currentPlaceholders();
-    return String(value) === String(ph[key]) ? 'placeholderValue' : '';
+  function csvEscape(value){
+    const s = String(value ?? '');
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function parseCsv(text){
+    const out = [];
+    let row = [];
+    let cell = '';
+    let quoted = false;
+
+    for(let i = 0; i < text.length; i++){
+      const ch = text[i];
+      const next = text[i + 1];
+
+      if(quoted){
+        if(ch === '"' && next === '"'){
+          cell += '"';
+          i++;
+        } else if(ch === '"'){
+          quoted = false;
+        } else {
+          cell += ch;
+        }
+      } else {
+        if(ch === '"'){
+          quoted = true;
+        } else if(ch === ','){
+          row.push(cell);
+          cell = '';
+        } else if(ch === '\n'){
+          row.push(cell);
+          out.push(row);
+          row = [];
+          cell = '';
+        } else if(ch !== '\r'){
+          cell += ch;
+        }
+      }
+    }
+
+    row.push(cell);
+    if(row.some(v => String(v).trim() !== '')) out.push(row);
+    return out;
+  }
+
+  function generateRows(){
+    const site = cleanCode($('siteName').value, 'SITE');
+    const category = cleanCode($('rackCategory').value, 'RACK');
+    const rack = pad2($('rackNumber').value);
+    const shelfCount = clampNumber($('shelfCount').value, 1, 26, 5);
+    const binCount = clampNumber($('binCount').value, 1, 99, 5);
+    const positionCount = clampNumber($('positionCount').value, 1, 26, 1);
+    const ph = placeholders();
+
+    rows = [];
+
+    for(let s = 0; s < shelfCount; s++){
+      for(let b = 1; b <= binCount; b++){
+        for(let p = 0; p < positionCount; p++){
+          const binCode = `${rack}${letter(s)}${pad2(b)}${letter(p)}`;
+          const fullLocation = `${site}:${category}:${binCode}`;
+          rows.push({
+            fullLocation,
+            binCode,
+            partNumber: ph.part,
+            description: ph.desc,
+            minStock: ph.min,
+            maxStock: ph.max,
+            notes: '',
+            qrCode: fullLocation
+          });
+        }
+      }
+    }
+  }
+
+  function isPlaceholder(key, value){
+    const ph = placeholders();
+    const map = {
+      partNumber: ph.part,
+      description: ph.desc,
+      minStock: ph.min,
+      maxStock: ph.max
+    };
+    return Object.prototype.hasOwnProperty.call(map, key) && String(value) === String(map[key]);
   }
 
   function inputCell(rowIndex, key){
     const value = rows[rowIndex][key] ?? '';
-    const cls = ['part','desc','min','max'].includes(key) ? placeholderClass(key, value) : '';
+    const cls = isPlaceholder(key, value) ? 'placeholderValue' : '';
     return `<input class="${cls}" data-row="${rowIndex}" data-key="${key}" value="${escapeHtml(value)}">`;
   }
 
   function renderTable(){
-    rowsBody.innerHTML = rows.map((r,i) => `
+    rowsBody.innerHTML = rows.map((r, i) => `
       <tr>
-        <td>${escapeHtml(r.full)}</td>
+        <td>${escapeHtml(r.fullLocation)}</td>
         <td>${escapeHtml(r.binCode)}</td>
-        <td>${inputCell(i,'part')}</td>
-        <td>${inputCell(i,'desc')}</td>
-        <td>${inputCell(i,'min')}</td>
-        <td>${inputCell(i,'max')}</td>
-        <td>${inputCell(i,'notes')}</td>
-        <td>${escapeHtml(r.qr)}</td>
+        <td>${inputCell(i, 'partNumber')}</td>
+        <td>${inputCell(i, 'description')}</td>
+        <td>${inputCell(i, 'minStock')}</td>
+        <td>${inputCell(i, 'maxStock')}</td>
+        <td>${inputCell(i, 'notes')}</td>
+        <td>${escapeHtml(r.qrCode)}</td>
       </tr>
     `).join('');
   }
 
   function renderMap(){
-    const shelves = parseShelves($('shelves').value);
-    const bins = Math.max(1, Math.min(99, Number($('bins').value) || 1));
-    rackGrid.style.gridTemplateColumns = `repeat(${bins}, minmax(90px, 1fr))`;
-    const byFirstPosition = rows.filter(r => /[A-Z]$/.test(r.binCode) && r.binCode.endsWith('A'));
-    const source = byFirstPosition.length ? byFirstPosition : rows;
-    rackGrid.innerHTML = source.map(r => `<div class="bin"><strong>${escapeHtml(r.binCode)}</strong>${escapeHtml(r.full)}</div>`).join('');
+    const binCount = clampNumber($('binCount').value, 1, 99, 5);
+    const positionCount = clampNumber($('positionCount').value, 1, 26, 1);
+    visualRack.style.gridTemplateColumns = `repeat(${binCount}, minmax(92px, 1fr))`;
+
+    const mapRows = positionCount > 1
+      ? rows.filter(r => r.binCode.endsWith('A'))
+      : rows;
+
+    visualRack.innerHTML = mapRows.map(r => `
+      <div class="binTile">
+        <strong>${escapeHtml(r.binCode)}</strong>
+        ${escapeHtml(r.fullLocation)}
+      </div>
+    `).join('');
   }
 
-  function escapeHtml(value){
-    return String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  function renderStatus(message){
+    statusLine.textContent = message || `${rows.length} bin position${rows.length === 1 ? '' : 's'} ready.`;
   }
 
-  function csvEscape(value){
-    const s = String(value ?? '');
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+  function render(message){
+    renderTable();
+    renderMap();
+    renderStatus(message);
+  }
+
+  function generate(){
+    generateRows();
+    render();
+  }
+
+  function reset(){
+    $('siteName').value = 'JETVAC';
+    $('rackCategory').value = 'BOLTS';
+    $('rackNumber').value = '1';
+    $('shelfCount').value = '5';
+    $('binCount').value = '5';
+    $('positionCount').value = '1';
+    $('partPlaceholder').value = 'Part';
+    $('descPlaceholder').value = 'Desc';
+    $('minPlaceholder').value = '0';
+    $('maxPlaceholder').value = '1';
+    $('uploadCsv').value = '';
+    generate();
   }
 
   function toCsv(){
-    const headers = ['Full Bin Location','Bin Code','Part Number','Description','Min Stock','Max Stock','Notes','QR Code'];
     const lines = [headers.map(csvEscape).join(',')];
     rows.forEach(r => {
-      lines.push([r.full,r.binCode,r.part,r.desc,r.min,r.max,r.notes,r.qr].map(csvEscape).join(','));
+      lines.push([
+        r.fullLocation,
+        r.binCode,
+        r.partNumber,
+        r.description,
+        r.minStock,
+        r.maxStock,
+        r.notes,
+        r.qrCode
+      ].map(csvEscape).join(','));
     });
     return lines.join('\n');
   }
 
   function downloadCsv(){
-    if(!rows.length) generate();
-    const site = ($('site').value || 'site').trim().toLowerCase().replace(/\s+/g,'-');
-    const category = ($('category').value || 'rack').trim().toLowerCase().replace(/\s+/g,'-');
-    const rack = pad2($('rack').value || '01');
+    if(!rows.length) generateRows();
+    const site = cleanCode($('siteName').value, 'site').toLowerCase();
+    const category = cleanCode($('rackCategory').value, 'rack').toLowerCase();
+    const rack = pad2($('rackNumber').value);
     const blob = new Blob([toCsv()], {type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -263,39 +491,105 @@
     URL.revokeObjectURL(url);
   }
 
-  function generate(){ buildRows(); renderTable(); renderMap(); }
+  function normaliseUploadedRow(rowObj){
+    const ph = placeholders();
+    const fullLocation = rowObj['Full Bin Location'] || rowObj.fullLocation || rowObj['Location'] || '';
+    const binCode = rowObj['Bin Code'] || rowObj.binCode || '';
+    return {
+      fullLocation: fullLocation || rowObj['QR Code'] || '',
+      binCode,
+      partNumber: rowObj['Part Number'] || rowObj.partNumber || ph.part,
+      description: rowObj['Description'] || rowObj.description || ph.desc,
+      minStock: rowObj['Min Stock'] || rowObj.minStock || ph.min,
+      maxStock: rowObj['Max Stock'] || rowObj.maxStock || ph.max,
+      notes: rowObj['Notes'] || rowObj.notes || '',
+      qrCode: rowObj['QR Code'] || rowObj.qrCode || fullLocation || ''
+    };
+  }
 
-  rowsBody.addEventListener('focusin', e => {
-    if(!e.target.matches('input[data-row]')) return;
-    const key = e.target.dataset.key;
-    const ph = currentPlaceholders();
-    if(['part','desc','min','max'].includes(key) && String(e.target.value) === String(ph[key])){
-      e.target.value = '';
-      e.target.classList.remove('placeholderValue');
+  function uploadCsv(file){
+    if(!file) return;
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const parsed = parseCsv(String(reader.result || ''));
+      if(parsed.length < 2){
+        alert('Could not upload CSV: CSV has a header but no data rows.');
+        return;
+      }
+
+      const header = parsed[0].map(h => String(h).trim());
+      const body = parsed.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+
+      if(!body.length){
+        alert('Could not upload CSV: CSV has a header but no data rows.');
+        return;
+      }
+
+      rows = body.map(cols => {
+        const obj = {};
+        header.forEach((h, i) => obj[h] = cols[i] ?? '');
+        return normaliseUploadedRow(obj);
+      }).filter(r => r.fullLocation || r.binCode || r.qrCode);
+
+      if(!rows.length){
+        alert('Could not upload CSV: no usable bin location rows were found.');
+        return;
+      }
+
+      render(`Uploaded ${rows.length} row${rows.length === 1 ? '' : 's'} from ${file.name}.`);
+    };
+
+    reader.readAsText(file);
+  }
+
+  rowsBody.addEventListener('focusin', event => {
+    const input = event.target;
+    if(!input.matches('input[data-row][data-key]')) return;
+
+    const key = input.dataset.key;
+    const rowIndex = Number(input.dataset.row);
+
+    if(isPlaceholder(key, input.value)){
+      input.value = '';
+      input.classList.remove('placeholderValue');
+      rows[rowIndex][key] = '';
     }
   });
 
-  rowsBody.addEventListener('focusout', e => {
-    if(!e.target.matches('input[data-row]')) return;
-    const i = Number(e.target.dataset.row);
-    const key = e.target.dataset.key;
-    const ph = currentPlaceholders();
-    let value = e.target.value;
-    if(['part','desc','min','max'].includes(key) && value.trim() === ''){
-      value = ph[key];
-      e.target.value = value;
-      e.target.classList.add('placeholderValue');
+  rowsBody.addEventListener('input', event => {
+    const input = event.target;
+    if(!input.matches('input[data-row][data-key]')) return;
+    const rowIndex = Number(input.dataset.row);
+    const key = input.dataset.key;
+    rows[rowIndex][key] = input.value;
+  });
+
+  rowsBody.addEventListener('focusout', event => {
+    const input = event.target;
+    if(!input.matches('input[data-row][data-key]')) return;
+
+    const key = input.dataset.key;
+    const rowIndex = Number(input.dataset.row);
+    const ph = placeholders();
+    const defaults = {
+      partNumber: ph.part,
+      description: ph.desc,
+      minStock: ph.min,
+      maxStock: ph.max
+    };
+
+    if(Object.prototype.hasOwnProperty.call(defaults, key) && input.value.trim() === ''){
+      input.value = defaults[key];
+      input.classList.add('placeholderValue');
+      rows[rowIndex][key] = defaults[key];
     }
-    rows[i][key] = value;
   });
 
   $('generateBtn').addEventListener('click', generate);
   $('downloadBtn').addEventListener('click', downloadCsv);
-  $('resetBtn').addEventListener('click', () => {
-    $('site').value='JETVAC'; $('category').value='BOLTS'; $('rack').value='01'; $('shelves').value='A:E'; $('bins').value='5'; $('positions').value='1';
-    $('partPlaceholder').value='Part'; $('descPlaceholder').value='Desc'; $('minPlaceholder').value='0'; $('maxPlaceholder').value='1';
-    generate();
-  });
+  $('resetBtn').addEventListener('click', reset);
+  $('uploadCsv').addEventListener('change', event => uploadCsv(event.target.files[0]));
 
   generate();
 })();
