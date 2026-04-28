@@ -8,6 +8,32 @@
 <link href="assets/css/style.css" rel="stylesheet"/>
 
 <style>
+/* === FIXED GRID === */
+.grid-2{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+@media (max-width:760px){
+  .grid-2{
+    grid-template-columns:1fr;
+  }
+}
+
+/* === FIXED INPUT STYLING === */
+.field input{
+  width:100%;
+  height:48px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+  box-sizing:border-box;
+}
+
+/* === OUTPUT STYLING === */
 .rackOutput,
 .rackOutput table,
 .rackOutput td,
@@ -31,6 +57,14 @@
 .rackOutput th{
   font-weight:700;
   background:rgba(255,255,255,.06);
+}
+
+/* === BUTTON ROW === */
+.btnRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:16px;
 }
 </style>
 </head>
@@ -173,7 +207,6 @@ function reset(){
 document.getElementById('generateBtn').onclick = generate;
 document.getElementById('downloadBtn').onclick = download;
 document.getElementById('resetBtn').onclick = reset;
-
 </script>
 </body>
 </html>
