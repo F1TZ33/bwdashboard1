@@ -256,14 +256,24 @@
 
   function applyScanToRow(payload){
     if(!activeRow || !payload) return;
-    const partInput = activeRow.querySelector('.partInput');
-    const qtyInput = activeRow.querySelector('.qtyInput');
+
+    // Lock the scan to the row that opened the scanner.
+    // This prevents the scanned values being copied into the next blank row.
+    const scannedRow = activeRow;
+    activeRow = null;
+
+    const partInput = scannedRow.querySelector('.partInput');
+    const qtyInput = scannedRow.querySelector('.qtyInput');
     const partText = [payload.part, payload.bin].filter(Boolean).join(' — ');
+
     partInput.value = partText || payload.bin || payload.part || '';
     qtyInput.value = payload.max || '';
 
-    if(partInput.value && qtyInput.value && activeRow === root.lastElementChild){
-      row();
+    if(partInput.value && qtyInput.value && scannedRow === root.lastElementChild){
+      const nextRow = row();
+      nextRow.querySelector('.partInput').value = '';
+      nextRow.querySelector('.qtyInput').value = '';
+      nextRow.querySelector('.partInput').focus();
     }
   }
 
@@ -361,6 +371,8 @@
     };
 
     el.querySelector('.orderScanBtn').onclick = () => startScanner(el);
+
+    return el;
   }
 
   function collectItems(){
